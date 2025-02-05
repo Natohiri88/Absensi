@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Absensi Pegawai</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7fc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin: 10px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .form-container input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .form-container button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .form-container button:hover {
+            background-color: #45a049;
+        }
+
+        .button-secondary {
+            background-color: #f44336;
+        }
+
+        .button-secondary:hover {
+            background-color: #e53935;
+        }
+
+        .button-refresh {
+            background-color: #2196F3;
+        }
+
+        .button-refresh:hover {
+            background-color: #1976D2;
+        }
+
+        .table-container {
+            width: 100%;
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th, table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        table tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        #attendanceContainer {
+            display: none;
+        }
+
+        .back-link {
+            text-decoration: none;
+            color: #2196F3;
+            font-size: 14px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .form-group {
+            margin: 20px 0;
+        }
+
+        .form-group input {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Halaman Signup -->
+    <div class="container" id="signupContainer">
+        <h1>Signup Absensi Pegawai</h1>
+        <div class="form-container">
+            <input type="text" id="signupUsername" placeholder="Username" required><br><br>
+            <input type="password" id="signupPassword" placeholder="Password" required><br><br>
+            <button class="button button-primary" id="signupBtn">Signup</button>
+        </div>
+        <br>
+        <p>Sudah memiliki akun? <a href="#" id="goToLogin" class="back-link">Login disini</a></p>
+    </div>
+
+    <!-- Halaman Login -->
+    <div class="container" id="loginContainer" style="display:none;">
+        <h1>Login Absensi Pegawai</h1>
+        <div class="form-container">
+            <input type="text" id="username" placeholder="Username" required><br><br>
+            <input type="password" id="password" placeholder="Password" required><br><br>
+            <button class="button button-primary" id="loginBtn">Login</button>
+        </div>
+        <br>
+        <p>Belum memiliki akun? <a href="#" id="goToSignup" class="back-link">Signup disini</a></p>
+    </div>
+
+    <!-- Halaman Absensi -->
+    <div class="container" id="attendanceContainer" style="display:none;">
+        <h1>Absensi Pegawai</h1>
+        <div class="form-group">
+            <label for="employeeName" style="font-size: 16px; color: #333;">Nama Pegawai: </label>
+            <input type="text" id="employeeName" placeholder="Nama Pegawai" disabled>
+            <button class="button button-primary" id="checkinBtn">Check-in</button>
+            <button class="button button-secondary" id="checkoutBtn" disabled>Check-out</button>
+            <button class="button button-refresh" id="refreshBtn">Refresh Data</button>
+            <button class="button button-secondary" id="logoutBtn">Logout</button>
+        </div>
+
+        <h2>Daftar Absensi</h2>
+        <div class="table-container">
+            <table id="attendanceTable">
+                <thead>
+                    <tr>
+                        <th>Nama</th>
+                        <th>Check-in</th>
+                        <th>Check-out</th>
+                        <th>Total Jam Kerja</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data absensi akan muncul di sini -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Menyimpan data absensi dan pengguna
+        let attendanceData = JSON.parse(localStorage.getItem("attendanceData")) || [];
+        let users = JSON.parse(localStorage.getItem("users")) || [];
+        let loggedInUser = localStorage.getItem("loggedInUser");
+
+        // Menambahkan baris absensi ke tabel
+        function addAttendanceRow(name, checkin, checkout, totalHours, index) {
+            const table = document.getElementById("attendanceTable").getElementsByTagName("tbody")[0];
+            const row = table.insertRow();
+            row.insertCell(0).textContent = name;
+            row.insertCell(1).textContent = checkin;
+            row.insertCell(2).textContent = checkout;
+            row.insertCell(3).textContent = totalHours;
+
+            const actionsCell = row.insertCell(4);
+            const deleteButton = document.createElement("button");
+            deleteButton.classList.add("button", "button-secondary");
+            deleteButton.textContent = "Delete";
+            deleteButton.addEventListener("click", () => deleteAttendance(index));
+            actionsCell.appendChild(deleteButton);
+        }
+
+        // Fungsi untuk menghapus absensi
+        function deleteAttendance(index) {
+            attendanceData.splice(index, 1);
+            saveAttendanceData();
+            reloadAttendanceTable();
+        }
+
+        // Reload tabel absensi
+        function reloadAttendanceTable() {
+            const tableBody = document.getElementById("attendanceTable").getElementsByTagName("tbody")[0];
+            tableBody.innerHTML = "";
+            if (attendanceData.length > 0) {
+                attendanceData.forEach((entry, index) => {
+                    addAttendanceRow(entry.name, entry.checkin, entry.checkout, entry.totalHours, index);
+                });
+            } else {
+                const noDataRow = tableBody.insertRow();
+                noDataRow.insertCell(0).colSpan = 5;
+                noDataRow.textContent = "Tidak ada data absensi.";
+            }
+        }
+
+        // Simpan data absensi
+        function saveAttendanceData() {
+            localStorage.setItem("attendanceData", JSON.stringify(attendanceData));
+        }
+
+        // Tombol signup event listener
+        document.getElementById("signupBtn").addEventListener("click", function() {
+            const username = document.getElementById("signupUsername").value;
+            const password = document.getElementById("signupPassword").value;
+
+            // Cek jika username sudah ada
+            if (users.some(user => user.username === username)) {
+                alert("Username sudah terdaftar.");
+            } else {
+                const newUser = { username, password };
+                users.push(newUser);
+                localStorage.setItem("users", JSON.stringify(users));
+                alert("Signup berhasil! Silakan login.");
+                document.getElementById("signupContainer").style.display = "none";
+                document.getElementById("loginContainer").style.display = "block";
+            }
+        });
+
+        // Tombol login event listener
+        document.getElementById("loginBtn").addEventListener("click", function() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            const user = users.find(u => u.username === username && u.password === password);
+
+            if (user) {
+                loggedInUser = user.username;
+                localStorage.setItem("loggedInUser", loggedInUser);
+                document.getElementById("loginContainer").style.display = "none";
+                document.getElementById("attendanceContainer").style.display = "block";
+                document.getElementById("employeeName").value = loggedInUser;
+                loadAttendanceDataForUser(loggedInUser);
+            } else {
+                alert("Username atau password salah.");
+            }
+        });
+
+        // Tombol go to signup
+        document.getElementById("goToSignup").addEventListener("click", function() {
+            document.getElementById("loginContainer").style.display = "none";
+            document.getElementById("signupContainer").style.display = "block";
+        });
+
+        // Tombol go to login
+        document.getElementById("goToLogin").addEventListener("click", function() {
+            document.getElementById("signupContainer").style.display = "none";
+            document.getElementById("loginContainer").style.display = "block";
+        });
+
+        // Memuat data absensi saat halaman pertama kali dimuat
+        function loadAttendanceDataForUser(user) {
+            // Filter data absensi berdasarkan user yang login
+            const userAttendance = attendanceData.filter(entry => entry.name === user);
+            if (userAttendance.length > 0) {
+                userAttendance.forEach(entry => {
+                    addAttendanceRow(entry.name, entry.checkin, entry.checkout, entry.totalHours);
+                });
+            }
+            toggleCheckinCheckoutButtons(user);
+        }
+
+        // Fungsi untuk menangani checkin dan checkout
+        document.getElementById("checkinBtn").addEventListener("click", function() {
+            const currentTime = new Date().toLocaleTimeString();
+            const attendance = {
+                name: loggedInUser,
+                checkin: currentTime,
+                checkout: "",
+                totalHours: 0
+            };
+            attendanceData.push(attendance);
+            saveAttendanceData();
+            reloadAttendanceTable();
+            toggleCheckinCheckoutButtons(loggedInUser);
+        });
+
+        document.getElementById("checkoutBtn").addEventListener("click", function() {
+            const currentTime = new Date().toLocaleTimeString();
+            const lastAttendance = attendanceData.reverse().find(entry => entry.name === loggedInUser && !entry.checkout);
+            if (lastAttendance) {
+                lastAttendance.checkout = currentTime;
+                const checkinTime = new Date(`1970-01-01T${lastAttendance.checkin}Z`);
+                const checkoutTime = new Date(`1970-01-01T${currentTime}Z`);
+                const totalHours = ((checkoutTime - checkinTime) / 3600000).toFixed(2); // dalam jam
+                lastAttendance.totalHours = totalHours;
+                saveAttendanceData();
+                reloadAttendanceTable();
+            }
+            toggleCheckinCheckoutButtons(loggedInUser);
+        });
+
+        // Fungsi untuk mengaktifkan tombol checkin dan checkout
+        function toggleCheckinCheckoutButtons(user) {
+            const lastAttendance = attendanceData.reverse().find(entry => entry.name === user && !entry.checkout);
+            if (lastAttendance) {
+                document.getElementById("checkinBtn").disabled = true;
+                document.getElementById("checkoutBtn").disabled = false;
+            } else {
+                document.getElementById("checkinBtn").disabled = false;
+                document.getElementById("checkoutBtn").disabled = true;
+            }
+        }
+
+        // Tombol refresh event listener
+        document.getElementById("refreshBtn").addEventListener("click", function() {
+            reloadAttendanceTable();
+        });
+
+        // event logout
+        document.getElementById("logoutBtn").addEventListener("click", function() {
+            // Delete Login
+            localStorage.removeItem("loggedInUser");
+            document.getElementById("attendanceContainer").style.display = "none";
+            document.getElementById("loginContainer").style.display = "block";
+        });
+
+    </script>
+</body>
+</html>
